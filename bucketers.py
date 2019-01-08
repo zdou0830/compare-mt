@@ -27,7 +27,7 @@ class Bucketer:
 
 class WordBucketer(Bucketer):
 
-  def calc_bucket(self, val, ref_label=None, out_label=None, src_label=None):
+  def calc_bucket(self, val, ref_label=None, out_label=None):
     """
     Calculate the bucket for a particular word
 
@@ -138,7 +138,7 @@ class FreqWordBucketer(WordBucketer):
       bucket_cutoffs = [1, 2, 3, 4, 5, 10, 100, 1000]
     self.set_bucket_cutoffs(bucket_cutoffs)
 
-  def calc_bucket(self, word, ref_label=None, out_label=None, src_label=None):
+  def calc_bucket(self, word, ref_label=None, out_label=None):
     return self.cutoff_into_bucket(self.freq_counts.get(word, 0))
 
   def name(self):
@@ -167,8 +167,6 @@ class LabelWordBucketer(WordBucketer):
       return self.bucket_map[ref_label]
     elif out_label:
       return self.bucket_map[out_label]
-    elif src_label:
-      return self.bucket_map[src_label]
     else:
       raise ValueError('When calculating buckets by label, ref_label or out_label must be non-zero')
 
