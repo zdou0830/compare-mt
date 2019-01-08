@@ -162,7 +162,7 @@ class LabelWordBucketer(WordBucketer):
     for i, l in enumerate(label_set):
       self.bucket_map[l] = i
 
-  def calc_bucket(self, word, ref_label=None, out_label=None, src_label=None):
+  def calc_bucket(self, word, ref_label=None, out_label=None):
     if ref_label:
       return self.bucket_map[ref_label]
     elif out_label:
