@@ -27,7 +27,7 @@ class Bucketer:
 
 class WordBucketer(Bucketer):
 
-  def calc_bucket(self, val, ref_label=None, out_label=None):
+  def calc_bucket(self, val, ref_label=None, out_label=None, src_label=None):
     """
     Calculate the bucket for a particular word
 
@@ -96,11 +96,10 @@ class WordBucketer(Bucketer):
         fmeas = 2 * prec * rec / (prec + rec)
       yield both_tot, ref_tot, out_tot, rec, prec, fmeas
 
-
 class FreqWordBucketer(WordBucketer):
 
   def __init__(self,
-               freq_counts=None, freq_count_file=None, freq_corpus_file=None, freq_data=None,
+               freq_counts=None, freq_count_file=None, freq_corpus_file=None, freq_corpus_case_insensitive=False, freq_data=None,
                bucket_cutoffs=None):
     """
     A bucketer that buckets words by their frequency.
@@ -110,6 +109,7 @@ class FreqWordBucketer(WordBucketer):
       freq_count_file: A file containing counts for each word in tab-separated word, count format.
                        Ignored if freq_counts exists.
       freq_corpus_file: A file with a corpus used for collecting counts. Ignored if freq_count_file exists.
+      freq_corpus_case_insensitive: Specify if considering case.
       freq_data: A tokenized corpus from which counts can be calculated. Ignored if freq_corpus_file exists.
       bucket_cutoffs: Cutoffs for each bucket.
                       The first bucket will be range(0,bucket_cutoffs[0]).
@@ -124,7 +124,7 @@ class FreqWordBucketer(WordBucketer):
             word, freq = line.strip().split('\t')
             freq_counts[word] = freq
       elif freq_corpus_file:
-        for word in itertools.chain(corpus_utils.iterate_tokens(freq_corpus_file)):
+        for word in itertools.chain(corpus_utils.iterate_tokens(freq_corpus_file, freq_corpus_case_insensitive)):
           freq_counts[word] += 1
       elif freq_data:
         for words in freq_data:
@@ -138,7 +138,7 @@ class FreqWordBucketer(WordBucketer):
       bucket_cutoffs = [1, 2, 3, 4, 5, 10, 100, 1000]
     self.set_bucket_cutoffs(bucket_cutoffs)
 
-  def calc_bucket(self, word, ref_label=None, out_label=None):
+  def calc_bucket(self, word, ref_label=None, out_label=None, src_label=None):
     return self.cutoff_into_bucket(self.freq_counts.get(word, 0))
 
   def name(self):
@@ -162,11 +162,13 @@ class LabelWordBucketer(WordBucketer):
     for i, l in enumerate(label_set):
       self.bucket_map[l] = i
 
-  def calc_bucket(self, word, ref_label=None, out_label=None):
+  def calc_bucket(self, word, ref_label=None, out_label=None, src_label=None):
     if ref_label:
       return self.bucket_map[ref_label]
     elif out_label:
       return self.bucket_map[out_label]
+    elif src_label:
+      return self.bucket_map[src_label]
     else:
       raise ValueError('When calculating buckets by label, ref_label or out_label must be non-zero')
 
@@ -251,14 +253,14 @@ class LengthDiffSentenceBucketer(SentenceBucketer):
 
 
 def create_word_bucketer_from_profile(bucket_type,
-                                      freq_counts=None, freq_count_file=None, freq_corpus_file=None, freq_data=None,
+                                      freq_counts=None, freq_count_file=None, freq_corpus_file=None, freq_corpus_case_insensitive=False, freq_data=None,
                                       label_set=None,
                                       bucket_cutoffs=None):
   if bucket_type == 'freq':
     return FreqWordBucketer(
       freq_counts=freq_counts,
       freq_count_file=freq_count_file,
-      freq_corpus_file=freq_corpus_file,
+      freq_corpus_file=freq_corpus_file, freq_corpus_case_insensitive=freq_corpus_case_insensitive,
       freq_data=freq_data,
       bucket_cutoffs=bucket_cutoffs)
   elif bucket_type == 'label':

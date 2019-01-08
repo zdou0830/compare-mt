@@ -62,7 +62,7 @@ def print_word_accuracy_report(ref, out1, out2,
   acc_type_map = {'prec': 3, 'rec': 4, 'fmeas': 5}
   bucketer = bucketers.create_word_bucketer_from_profile(bucket_type,
                                                          freq_count_file=freq_count_file,
-                                                         freq_corpus_file=freq_corpus_file,
+                                                         freq_corpus_file=freq_corpus_file, freq_corpus_case_insensitive=args.case_insensitive,
                                                          freq_data=ref,
                                                          label_set=label_set)
   ref_labels = corpus_utils.load_tokens(ref_labels) if type(ref_labels) == str else ref_labels
@@ -167,7 +167,6 @@ def print_ngram_report(ref, out1, out2,
     print('{}\t{} (sys1={}, sys2={})'.format(' '.join(k), v, match1[k], match2[k]))
   print()
 
-
 def print_sentence_examples(ref, out1, out2,
                             score_type='sentbleu',
                             report_length=10):
@@ -210,6 +209,7 @@ if __name__ == '__main__':
                       help='A path to a system output')
   parser.add_argument('out2_file', type=str,
                       help='A path to another system output')
+  parser.add_argument('--case_insensitive', action='store_true')
   parser.add_argument('--compare_scores', type=str, nargs='*',
                       default=['score_type=bleu', 'score_type=length'],
                       help="""
@@ -228,7 +228,7 @@ if __name__ == '__main__':
                                'bucket_type=length,statistic_type=score,score_measure=bleu'],
                       help="""
                       Compare sentence counts by buckets. Can specify arguments in 'arg1=val1,arg2=val2,...' format.
-                      See documentation for 'print_word_accuracy_report' to see which arguments are available.
+                      See documentation for 'print_sentence_buckets_report' to see which arguments are available.
                       """)
   parser.add_argument('--compare_ngrams', type=str, nargs='*',
                       default=['compare_type=match'],
@@ -244,7 +244,7 @@ if __name__ == '__main__':
                       """)
   args = parser.parse_args()
 
-  ref, out1, out2 = [corpus_utils.load_tokens(x) for x in (args.ref_file, args.out1_file, args.out2_file)]
+  ref, out1, out2 = [corpus_utils.load_tokens(x, args.case_insensitive) for x in (args.ref_file, args.out1_file, args.out2_file)]
 
   # Aggregate scores
   if args.compare_scores:
@@ -276,6 +276,7 @@ if __name__ == '__main__':
     for profile in args.compare_ngrams:
       kargs = parse_profile(profile)
       print_ngram_report(ref, out1, out2, **kargs)
+      print()
 
   # Sentence example analysis
   if args.compare_sentence_examples:
@@ -284,3 +285,4 @@ if __name__ == '__main__':
       kargs = parse_profile(profile)
       print_sentence_examples(ref, out1, out2, **kargs)
       print()
+
